@@ -29,7 +29,7 @@ impl TestApp {
 
     pub async fn get_root(&self) -> reqwest::Response {
         self.http_client
-            .get(format!("{}/", &self.address))
+            .get(format!("{}/auth", &self.address))
             .send()
             .await
             .expect("Failed to execute request.")
