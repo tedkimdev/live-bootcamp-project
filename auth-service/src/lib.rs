@@ -13,7 +13,7 @@ pub struct Application {
 impl Application {
     pub async fn build(address: &str) -> Result<Self, Box<dyn Error>> {
         let router = Router::new()
-            .nest_service("/auth", ServeDir::new("assets"))
+            .nest_service("/", ServeDir::new("assets"))
             .route("/signup", post(routes::signup))
             .route("/login", post(routes::login))
             .route("/logout", post(routes::logout))
