@@ -15,7 +15,7 @@ use tower_http::services::ServeDir;
 async fn main() {
     let app = Router::new()
         .nest_service("/assets", ServeDir::new("assets"))
-        .route("/app", get(root))
+        .route("/", get(root))
         .route("/protected", get(protected));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
