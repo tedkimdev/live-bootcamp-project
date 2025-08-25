@@ -1,5 +1,4 @@
 mod helpers;
-mod routes;
 mod root;
 mod login;
 mod logout;

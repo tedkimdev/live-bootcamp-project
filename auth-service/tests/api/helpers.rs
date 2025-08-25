@@ -1,4 +1,7 @@
-use auth_service::Application;
+use std::{collections::HashMap, sync::Arc};
+
+use auth_service::{app_state, services::hashmap_user_store, Application};
+use tokio::sync::RwLock;
 use uuid::Uuid;
 
 pub struct TestApp {
@@ -8,14 +11,19 @@ pub struct TestApp {
 
 impl TestApp {
     pub async fn new() -> Self {
-        let app = Application::build("127.0.0.1:0")
+        let user_store = hashmap_user_store::HashmapUserStore {
+            users: HashMap::new(),
+        };
+        let app_state = app_state::AppState::new(Arc::new(RwLock::new(user_store)));
+
+        let app = Application::build(app_state, "127.0.0.1:0")
             .await
             .expect("Failed to build app");
-        
+
         let address = format!("http://{}", app.address.clone());
 
         // Run the auth service in a separate async task
-        // to avoid blocking the main test thread. 
+        // to avoid blocking the main test thread.
         #[allow(clippy::let_underscore_future)]
         let _ = tokio::spawn(app.run());
 
