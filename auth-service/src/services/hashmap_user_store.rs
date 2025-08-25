@@ -1,22 +1,15 @@
 use std::collections::HashMap;
 
-use crate::domain::User;
-
-#[derive(Debug, PartialEq)]
-pub enum UserStoreError {
-    UserAlreadyExists,
-    UserNotFound,
-    InvalidCredentials,
-    UnexpectedError,
-}
+use crate::domain::{User, UserStore, UserStoreError};
 
 #[derive(Default)]
 pub struct HashmapUserStore {
     pub users: HashMap<String, User>,
 }
 
-impl HashmapUserStore {
-    pub fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
+#[async_trait::async_trait]
+impl UserStore for HashmapUserStore {
+    async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
         match self.users.get(&user.email) {
             Some(_u) => Err(UserStoreError::UserAlreadyExists),
             None => {
@@ -26,14 +19,14 @@ impl HashmapUserStore {
         }
     }
 
-    pub fn get_user(&self, email: &str) -> Result<&User, UserStoreError> {
+    async fn get_user(&self, email: &str) -> Result<&User, UserStoreError> {
         match self.users.get(email) {
             Some(u) => Ok(u),
             None => Err(UserStoreError::UserNotFound),
         }
     }
 
-    pub fn validate_user(&self, email: &str, password: &str) -> Result<(), UserStoreError> {
+    async fn validate_user(&self, email: &str, password: &str) -> Result<(), UserStoreError> {
         if let Some(u) = self.users.get(email) {
             if u.password == password {
                 return Ok(());
@@ -58,7 +51,7 @@ mod tests{
         let email = "dev.ted.kim@gmail.com";
         let user = User::new(email.to_owned(), "password".to_owned(), true);
 
-        let result = user_store.add_user(user);
+        let result = user_store.add_user(user).await;
         assert!(result.is_ok());
     }
     #[tokio::test]
@@ -71,10 +64,10 @@ mod tests{
         let require_2fa = true;
         let user = User::new(email.to_owned(), password.to_owned(), require_2fa);
 
-        let result = user_store.add_user(user);
+        let result = user_store.add_user(user).await;
         assert!(result.is_ok());
 
-        let result = user_store.get_user(email);
+        let result = user_store.get_user(email).await;
         assert!(result.is_ok());
         let user = result.unwrap();
         assert_eq!(user.email, email.to_string());
@@ -91,10 +84,10 @@ mod tests{
         let require_2fa = true;
         let user = User::new(email.to_owned(), password.to_owned(), require_2fa);
 
-        let result = user_store.add_user(user);
+        let result = user_store.add_user(user).await;
         assert!(result.is_ok());
 
-        let result = user_store.validate_user(email, "wrong_password");
+        let result = user_store.validate_user(email, "wrong_password").await;
         assert!(result.is_err());
         let err = result.unwrap_err();
         

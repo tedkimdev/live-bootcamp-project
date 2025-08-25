@@ -3,10 +3,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::domain::AuthAPIError;
 use crate::{app_state::AppState, domain::User};
-use crate::services::UserStoreError;
 
 pub async fn signup(
-    state: State<AppState>,
+    State(state): State<AppState>,
     Json(request): Json<SignupRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
     let email = request.email;
@@ -20,12 +19,12 @@ pub async fn signup(
     
     let mut user_store = state.user_store.write().await;
     
-    match user_store.get_user(&email) {
+    match user_store.get_user(&email).await {
         Ok(_) => return Err(AuthAPIError::UserAlreadyExists),
         Err(_) => println!("@"),
     };
 
-    match user_store.add_user(user) {
+    match user_store.add_user(user).await {
         Ok(_) => {
             let response = Json(SignupResponse{
                 message: "User created successfully!".to_string(),
