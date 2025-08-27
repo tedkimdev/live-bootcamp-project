@@ -16,10 +16,12 @@ pub async fn signup(
     let user = User::new(email.clone(), password, request.requires_2fa);
     let mut user_store = state.user_store.write().await;
     
-    if user_store.get_user(&email).await.is_ok() {
-        return Err(AuthAPIError::UserAlreadyExists);
-    }
-
+    match user_store.get_user(&email).await {
+        Ok(_) => return Err(AuthAPIError::UserAlreadyExists),
+        Err(crate::domain::UserStoreError::UnexpectedError) => return Err(AuthAPIError::UnexpectedError),
+        Err(_) => (),
+    };
+         
     match user_store.add_user(user).await {
         Ok(_) => {
             let response = Json(SignupResponse{
@@ -27,6 +29,7 @@ pub async fn signup(
             });
             Ok((http::StatusCode::CREATED, response))
         },
+        Err(crate::domain::UserStoreError::UserAlreadyExists) => Err(AuthAPIError::UserAlreadyExists),
         Err(_) => {
             Err(AuthAPIError::UnexpectedError)
         }

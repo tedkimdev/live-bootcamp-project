@@ -11,10 +11,34 @@ pub struct TestApp {
 
 impl TestApp {
     pub async fn new() -> Self {
-        let user_store = hashmap_user_store::HashmapUserStore {
+        let user_store = Arc::new(RwLock::new(hashmap_user_store::HashmapUserStore {
             users: HashMap::new(),
-        };
-        let app_state = app_state::AppState::new(Arc::new(RwLock::new(user_store)));
+        }));
+        let app_state = app_state::AppState::new(user_store);
+
+        let app = Application::build(app_state, "127.0.0.1:0")
+            .await
+            .expect("Failed to build app");
+
+        let address = format!("http://{}", app.address.clone());
+
+        // Run the auth service in a separate async task
+        // to avoid blocking the main test thread.
+        #[allow(clippy::let_underscore_future)]
+        let _ = tokio::spawn(app.run());
+
+        let http_client = reqwest::Client::new();
+
+        TestApp {
+            address,
+            http_client,
+        }
+    }
+
+    pub async fn with_user_store(
+        user_store: Arc<RwLock<dyn auth_service::domain::UserStore>>
+    ) -> Self {
+        let app_state = app_state::AppState::new(user_store);
 
         let app = Application::build(app_state, "127.0.0.1:0")
             .await
