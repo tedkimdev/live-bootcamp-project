@@ -1,6 +1,6 @@
 use std::{error::Error};
 
-use axum::{http::{self}, response::{IntoResponse, Response}, routing::post, serve::Serve, Json, Router};
+use axum::{http::{self}, response::{IntoResponse, Response}, routing::{delete, post}, serve::Serve, Json, Router};
 use tower_http::services::ServeDir;
 
 pub mod domain;
@@ -22,6 +22,7 @@ impl Application {
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
             .route("/signup", post(routes::signup))
+            .route("/delete-account", delete(routes::delete_account))
             .route("/login", post(routes::login))
             .route("/logout", post(routes::logout))
             .route("/verify-2fa", post(routes::verify_2fa))

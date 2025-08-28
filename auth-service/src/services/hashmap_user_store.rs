@@ -36,6 +36,20 @@ impl UserStore for HashmapUserStore {
         }
         Err(UserStoreError::UserNotFound)
     }
+
+    async fn delete_user(&mut self, email: &Email, password: &Password) -> Result<(), UserStoreError> {
+        if self.validate_user(email, password).await.is_ok() {
+            match self.users.remove(email) {
+                Some(_u) => return Ok(()),
+                None => {
+                    
+                    return Err(UserStoreError::UserNotFound);
+                },
+            }
+        };
+
+        Err(UserStoreError::InvalidCredentials)
+    }
 }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 
 
@@ -101,6 +115,32 @@ mod tests{
         let err = result.unwrap_err();
         
         assert_eq!(err, UserStoreError::InvalidCredentials);
+    }
+
+    #[tokio::test]
+    async fn test_delete_user() {
+        let mut user_store = HashmapUserStore {
+            users: HashMap::new(),
+        };
+        
+        let email = Email::parse("dev.ted.kim@gmail.com".to_string()).unwrap();
+        let password = Password::parse("password".to_string()).unwrap();
+        let wrong_password = Password::parse("wrong_password".to_string()).unwrap();
+        let require_2fa = true;
+
+        let user = User::new(email.clone(), password.clone(), require_2fa);
+
+        let result = user_store.add_user(user).await;
+        assert!(result.is_ok());
+
+        let result = user_store.delete_user(&email, &wrong_password).await;
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        
+        assert_eq!(err, UserStoreError::InvalidCredentials);
+
+        let result = user_store.delete_user(&email, &password).await;
+        assert!(result.is_ok());
     }
     
 }
