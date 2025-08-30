@@ -86,21 +86,34 @@ async fn should_return_201_if_valid_input() {
 #[tokio::test]
 async fn should_return_400_if_invalid_input() {
     let app = TestApp::new().await;
+    
+    let random_email = get_random_email();
+
     let input = [
         serde_json::json!({
-            "email": "invalid_email",
-            "password": "passowrd123",
-            "requires2FA": true,
+            "email": "",
+            "password": "password123",
+            "requires2FA": true
         }),
         serde_json::json!({
-            "email": get_random_email(),
-            "password": "1",
-            "requires2FA": true,
+            "email": random_email,
+            "password": "",
+            "requires2FA": true
         }),
         serde_json::json!({
             "email": "",
-            "password": "1",
-            "requires2FA": true,
+            "password": "",
+            "requires2FA": true
+        }),
+        serde_json::json!({
+            "email": "invalid_email",
+            "password": "password123",
+            "requires2FA": true
+        }),
+        serde_json::json!({
+            "email": random_email,
+            "password": "invalid",
+            "requires2FA": true
         }),
     ];
 
@@ -129,9 +142,11 @@ async fn should_return_409_if_email_already_exists() {
         "requires2FA": true,
     });
 
-    app.post_signup(&body).await;
     let response = app.post_signup(&body).await;
-    assert_eq!(response.status().as_u16(), 409,);
+    assert_eq!(response.status().as_u16(), 201);
+    
+    let response = app.post_signup(&body).await;
+    assert_eq!(response.status().as_u16(), 409);
     assert_eq!(
         response
             .json::<ErrorResponse>()
