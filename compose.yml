@@ -23,5 +23,7 @@ services:
   auth-service:
     image: tedkimdev/auth-service
     restart: "always" # automatically restart container when server crashes
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
     expose:
       - "3000"
