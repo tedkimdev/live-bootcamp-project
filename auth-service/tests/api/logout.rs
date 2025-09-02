@@ -54,7 +54,11 @@ async fn should_return_200_if_valid_jwt_cookie() {
     assert_eq!(
         response.status().as_u16(),
         200,
-    )
+    );
+    
+    let banned_token = app.banned_token_store.read().await.get_banned_token(cookie.value().to_string()).await;
+    assert!(banned_token.is_ok());
+    assert_eq!(banned_token.unwrap(), cookie.value().to_string());
 }
 
 #[tokio::test]

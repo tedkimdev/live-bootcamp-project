@@ -49,3 +49,28 @@ async fn should_return_401_if_invalid_token() {
         401,
     );
 }
+
+#[tokio::test]
+async fn should_return_401_if_banned_token() {
+    let app = TestApp::new().await;
+    
+    let banned_cookie = generate_auth_cookie(
+        &Email::parse(get_random_email()).unwrap(),
+    ).unwrap();
+    let result = app
+        .banned_token_store.write()
+        .await
+        .add_banned_token(banned_cookie.value().to_string())
+        .await;
+    assert!(result.is_ok());
+    
+    let body = serde_json::json!({
+        "token": banned_cookie.value().to_string(),
+    });
+    let response = app.post_verify_token(&body).await;
+
+    assert_eq!(
+        response.status().as_u16(),
+        401,
+    );
+}
