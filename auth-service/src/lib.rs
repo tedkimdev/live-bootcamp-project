@@ -13,6 +13,8 @@ use app_state::AppState;
 use domain::AuthAPIError;
 use serde::{Deserialize, Serialize};
 
+use crate::utils::ALLOWED_ORIGINS;
+
 pub struct Application {
     server: Serve<Router, Router>,
     pub address: String,
@@ -20,11 +22,7 @@ pub struct Application {
 
 impl Application {
     pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
-        let allowed_origins = [
-            "http://localhost:8000".parse()?,
-            "http://67.205.181.209:8000".parse()?,
-            "http://67.205.181.209:80".parse()?,
-        ];
+        let allowed_origins = ALLOWED_ORIGINS.clone();
 
         let cors = CorsLayer::new()
             // Allow GET and POST requests
@@ -41,6 +39,7 @@ impl Application {
             .route("/logout", post(routes::logout))
             .route("/verify-2fa", post(routes::verify_2fa))
             .route("/verify-token", post(routes::verify_token))
+            // .route("/refresh-token")
             .with_state(app_state)
             .layer(cors);
 
