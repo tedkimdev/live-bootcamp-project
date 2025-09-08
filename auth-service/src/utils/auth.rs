@@ -3,7 +3,7 @@ use chrono::Utc;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Validation};
 use serde::{Deserialize, Serialize};
 
-use crate::{app_state::BannedTokenStoreType, domain::Email, utils::JWT_REFRESH_COOKIE_NAME};
+use crate::{app_state::BannedTokenStoreType, domain::Email};
 
 use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
 
@@ -13,26 +13,9 @@ pub fn generate_auth_cookie(email: &Email) -> Result<Cookie<'static>, GenerateTo
     Ok(create_auth_cookie(token))
 }
 
-// Create cookie with a new JWT refresth auth token
-pub fn generate_auth_refresh_cookie(email: &Email) -> Result<Cookie<'static>, GenerateTokenError> {
-    let token = generate_auth_refresh_token(email)?;
-    Ok(create_auth_refresh_cookie(token))
-}
-
 // Create cookie and set the value to the passed-in token string 
 fn create_auth_cookie(token: String) -> Cookie<'static> {
     let cookie = Cookie::build((JWT_COOKIE_NAME, token))
-        .path("/") // apple cookie to all URLs on the server
-        .http_only(true) // prevent JavaScript from accessing the cookie
-        .same_site(SameSite::Lax) // send cookie with "same-site" requests, and with "cross-site" top-level navigations.
-        .build();
-
-    cookie
-}
-
-// Create cookie and set the value to the passed-in token string 
-fn create_auth_refresh_cookie(token: String) -> Cookie<'static> {
-    let cookie = Cookie::build((JWT_REFRESH_COOKIE_NAME, token))
         .path("/") // apple cookie to all URLs on the server
         .http_only(true) // prevent JavaScript from accessing the cookie
         .same_site(SameSite::Lax) // send cookie with "same-site" requests, and with "cross-site" top-level navigations.
@@ -49,34 +32,10 @@ pub enum GenerateTokenError {
 
 // This value determines how long the JWT auth token is valid for
 pub const TOKEN_TTL_SECONDS: i64 = 600; // 10 minutes
-pub const REFRESH_TOKEN_TTL_SECONDS: i64 = 60 * 60 * 24; // 24 hours
 
 // Create JWT auth token
 fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
     let delta = chrono::Duration::try_seconds(TOKEN_TTL_SECONDS)
-        .ok_or(GenerateTokenError::UnexpectedError)?;
-
-    // Create JWT expiration time
-    let exp = Utc::now()
-        .checked_add_signed(delta)
-        .ok_or(GenerateTokenError::UnexpectedError)?
-        .timestamp();
-
-    // Cast exp to a usize, which is what Claims expects
-    let exp: usize = exp
-        .try_into()
-        .map_err(|_| GenerateTokenError::UnexpectedError)?;
-
-    let sub = email.as_ref().to_owned();
-
-    let claims = Claims { sub, exp };
-
-    create_token(&claims).map_err(GenerateTokenError::TokenError)
-}
-
-// Create JWT auth token
-fn generate_auth_refresh_token(email: &Email) -> Result<String, GenerateTokenError> {
-    let delta = chrono::Duration::try_seconds(REFRESH_TOKEN_TTL_SECONDS)
         .ok_or(GenerateTokenError::UnexpectedError)?;
 
     // Create JWT expiration time
