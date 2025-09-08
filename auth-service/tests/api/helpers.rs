@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use auth_service::{
-    app_state::{self, AppState, BannedTokenStoreType, UserStoreType}, services::{HashmapUserStore, HashsetBannedTokenStore}, utils::test, Application
+    app_state::{self, AppState, BannedTokenStoreType, UserStoreType},
+    services::{HashmapUserStore, HashsetBannedTokenStore},
+    utils::test,
+    Application,
 };
 use reqwest::cookie::Jar;
 use tokio::sync::RwLock;
@@ -10,8 +13,8 @@ use uuid::Uuid;
 pub struct TestApp {
     pub address: String,
     pub cookie_jar: Arc<Jar>,
-    pub http_client: reqwest::Client,
     pub banned_token_store: BannedTokenStoreType,
+    pub http_client: reqwest::Client,
 }
 
 impl TestApp {
@@ -40,14 +43,12 @@ impl TestApp {
         TestApp {
             address,
             cookie_jar,
-            http_client,
             banned_token_store,
+            http_client,
         }
     }
 
-    pub async fn with_user_store(
-        user_store: UserStoreType,
-    ) -> Self {
+    pub async fn with_user_store(user_store: UserStoreType) -> Self {
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let app_state = app_state::AppState::new(user_store, banned_token_store.clone());
 
@@ -109,7 +110,7 @@ impl TestApp {
     }
 
     pub async fn post_login<Body>(&self, body: &Body) -> reqwest::Response
-    where 
+    where
         Body: serde::Serialize,
     {
         self.http_client
@@ -137,7 +138,7 @@ impl TestApp {
     }
 
     pub async fn post_verify_token<Body>(&self, body: &Body) -> reqwest::Response
-    where 
+    where
         Body: serde::Serialize,
     {
         self.http_client

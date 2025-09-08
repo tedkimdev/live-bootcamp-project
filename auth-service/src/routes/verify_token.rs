@@ -5,9 +5,12 @@ use crate::{app_state::AppState, domain::AuthAPIError, utils::validate_token};
 
 pub async fn verify_token(
     State(state): State<AppState>,
-    Json(request): Json<VerifyTokenRequest>
+    Json(request): Json<VerifyTokenRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
-    if validate_token(&request.token, state.banned_token_store).await.is_err() {
+    if validate_token(&request.token, state.banned_token_store)
+        .await
+        .is_err()
+    {
         return Err(AuthAPIError::InvalidToken);
     }
     Ok(http::StatusCode::OK)
@@ -15,5 +18,5 @@ pub async fn verify_token(
 
 #[derive(Deserialize)]
 pub struct VerifyTokenRequest {
-    pub token: String
+    pub token: String,
 }

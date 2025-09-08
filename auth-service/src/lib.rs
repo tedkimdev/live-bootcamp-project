@@ -25,7 +25,6 @@ impl Application {
         let allowed_origins = ALLOWED_ORIGINS.clone();
 
         let cors = CorsLayer::new()
-            // Allow GET and POST requests
             .allow_methods([http::Method::GET, http::Method::POST])
             // Allow cookies to be included in requests
             .allow_credentials(true)
@@ -66,10 +65,10 @@ impl IntoResponse for AuthAPIError {
         let (status, error_message) = match self {
             AuthAPIError::UserAlreadyExists => (http::StatusCode::CONFLICT, "User already exists"),
             AuthAPIError::InvalidCredentials => (http::StatusCode::BAD_REQUEST, "Invalid credentials"),
+            AuthAPIError::IncorrectCredentials => (http::StatusCode::UNAUTHORIZED, "Incorrect credentials"),
+            AuthAPIError::InvalidToken => (http::StatusCode::UNAUTHORIZED, "Invalid auth token"),
+            AuthAPIError::MissingToken => (http::StatusCode::BAD_REQUEST, "Missing auth token"),
             AuthAPIError::UnexpectedError => (http::StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error"),
-            AuthAPIError::IncorrectCredentials => (http::StatusCode::UNAUTHORIZED, "Unauthorized"),
-            AuthAPIError::InvalidToken => (http::StatusCode::UNAUTHORIZED, "Unauthorized"),
-            AuthAPIError::MissingToken => (http::StatusCode::BAD_REQUEST, "Missing token"),
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),
