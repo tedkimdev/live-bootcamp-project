@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
 use auth_service::{
-    app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType, UserStoreType},
-    services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore},
+    app_state::{
+        AppState, BannedTokenStoreType, EmailclientType, TwoFACodeStoreType, UserStoreType,
+    },
+    services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient},
     utils::test,
     Application,
 };
@@ -15,6 +17,7 @@ pub struct TestApp {
     pub cookie_jar: Arc<Jar>,
     pub banned_token_store: BannedTokenStoreType,
     pub two_fa_code_store: TwoFACodeStoreType,
+    pub email_client: EmailclientType,
     pub http_client: reqwest::Client,
 }
 
@@ -23,10 +26,13 @@ impl TestApp {
         let user_store = Arc::new(RwLock::new(HashmapUserStore::default()));
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
+        let email_client = Arc::new(RwLock::new(MockEmailClient {}));
+
         let app_state: AppState = AppState::new(
             user_store,
             banned_token_store.clone(),
             two_fa_code_store.clone(),
+            email_client.clone(),
         );
 
         let app = Application::build(app_state, test::APP_ADDRESS)
@@ -51,6 +57,7 @@ impl TestApp {
             cookie_jar,
             banned_token_store,
             two_fa_code_store,
+            email_client,
             http_client,
         }
     }
@@ -58,10 +65,12 @@ impl TestApp {
     pub async fn with_user_store(user_store: UserStoreType) -> Self {
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
+        let email_client = Arc::new(RwLock::new(MockEmailClient {}));
         let app_state: AppState = AppState::new(
             user_store,
             banned_token_store.clone(),
             two_fa_code_store.clone(),
+            email_client.clone(),
         );
 
         let app = Application::build(app_state, test::APP_ADDRESS)
@@ -86,6 +95,7 @@ impl TestApp {
             cookie_jar,
             banned_token_store,
             two_fa_code_store,
+            email_client,
             http_client,
         }
     }
