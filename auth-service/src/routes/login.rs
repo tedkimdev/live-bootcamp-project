@@ -105,7 +105,7 @@ pub struct LoginRequest {
 
 // The login route can return 2 possible success responses.
 // This enum models each response!
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum LoginResponse {
     RegularAuth,
