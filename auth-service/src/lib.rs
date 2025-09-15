@@ -1,6 +1,7 @@
 use std::{error::Error};
 
 use axum::{http::{self}, response::{IntoResponse, Response}, routing::{delete, post}, serve::Serve, Json, Router};
+use sqlx::{postgres::PgPoolOptions, PgPool};
 use tower_http::{cors::CorsLayer, services::ServeDir};
 
 pub mod domain;
@@ -76,4 +77,9 @@ impl IntoResponse for AuthAPIError {
 
         (status, body).into_response()
     }
+}
+
+pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {
+    // Create a new PostgreSQL connection pool
+    PgPoolOptions::new().max_connections(5).connect(url).await
 }

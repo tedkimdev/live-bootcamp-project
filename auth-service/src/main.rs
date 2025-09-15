@@ -1,12 +1,15 @@
 use std::sync::Arc;
 
 use auth_service::{
-    app_state, services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient}, utils::prod, Application
+    app_state, get_postgres_pool, services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient}, utils::{prod, DATABASE_URL}, Application
 };
+use sqlx::PgPool;
 use tokio::sync::RwLock;
 
 #[tokio::main]
 async fn main() {
+    let pg_pool = configure_postgresql().await;
+
     let user_store = Arc::new(RwLock::new(HashmapUserStore::default()));
     let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
     let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
@@ -18,4 +21,17 @@ async fn main() {
         .expect("Failed to build app");
 
     app.run().await.expect("Failed to run app");
+}
+
+async fn configure_postgresql() -> PgPool {
+    let pg_pool = get_postgres_pool(&DATABASE_URL)
+        .await
+        .expect("Failed to create Postgres connection pool!");
+
+    sqlx::migrate!()
+        .run(&pg_pool)
+        .await
+        .expect("Failed to run migrations");
+
+    pg_pool
 }

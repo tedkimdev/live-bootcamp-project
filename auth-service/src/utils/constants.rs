@@ -6,6 +6,7 @@ use std::env as std_env;
 // Define a lazily evaluated static. lazy_static is needed because std_env::var is not a const function.
 lazy_static! {
     pub static ref JWT_SECRET: String = set_token();
+    pub static ref DATABASE_URL: String = set_database_url();
     pub static ref ALLOWED_ORIGINS: Vec<http::HeaderValue> = set_allowed_origins();
 }
 
@@ -14,6 +15,15 @@ fn set_token() -> String {
     let secret = std_env::var(env::JWT_SECRET_ENV_VAR).expect("JWT_SCRET must be set.");
     if secret.is_empty() {
         panic!("JWT_SECRET must not be empty.");
+    }
+    secret
+}
+
+fn set_database_url() -> String {
+    dotenv().ok(); // Load environment variables
+    let secret = std_env::var(env::DATABASE_URL).expect("DATABASE_URL must be set.");
+    if secret.is_empty() {
+        panic!("DATABASE_URL must not be empty.");
     }
     secret
 }
@@ -31,6 +41,7 @@ fn set_allowed_origins() -> Vec<http::HeaderValue> {
 
 pub mod env {
     pub const JWT_SECRET_ENV_VAR: &str =  "JWT_SECRET";
+    pub const DATABASE_URL: &str =  "DATABASE_URL";
     pub const ALLOWED_ORIGINS_VAR: &str = "ALLOWED_ORIGINS";
 }
 
