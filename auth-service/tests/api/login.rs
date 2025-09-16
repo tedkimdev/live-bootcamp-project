@@ -203,7 +203,10 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
 
     let two_fa_code_store = app.two_fa_code_store.read().await;
     let email = Email::parse(random_email).unwrap();
-    let (login_attempt_id, _) = two_fa_code_store.get_code(&email).await.unwrap();
+    let code_tuple = two_fa_code_store
+        .get_code(&Email::parse(random_email).unwrap())
+        .await
+        .expect("Failed to get 2FA code");
 
-    assert!(!login_attempt_id.as_ref().is_empty());
+    assert_eq!(code_tuple.0.as_ref(), json_body.login_attempt_id);
 }

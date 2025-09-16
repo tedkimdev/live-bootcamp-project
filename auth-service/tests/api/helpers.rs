@@ -26,7 +26,7 @@ impl TestApp {
         let user_store = Arc::new(RwLock::new(HashmapUserStore::default()));
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
-        let email_client = Arc::new(RwLock::new(MockEmailClient {}));
+        let email_client = Arc::new(MockEmailClient {});
 
         let app_state: AppState = AppState::new(
             user_store,
@@ -65,7 +65,7 @@ impl TestApp {
     pub async fn with_user_store(user_store: UserStoreType) -> Self {
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
-        let email_client = Arc::new(RwLock::new(MockEmailClient {}));
+        let email_client = Arc::new(MockEmailClient {});
         let app_state: AppState = AppState::new(
             user_store,
             banned_token_store.clone(),

@@ -1,4 +1,5 @@
 use mockall::automock;
+use rand::Rng;
 use uuid::Uuid;
 
 use crate::domain::{Email, Password, User};
@@ -93,8 +94,7 @@ impl TwoFACode {
 impl Default for TwoFACode {
     fn default() -> Self {
         // Generate a random number between 100000 and 999999
-        let num: u32 = 100_000 + (rand::random::<u32>() % 900_000);
-        Self(num.to_string())
+        Self(rand::rng().random_range(100_000..=999_999).to_string())
     }
 }
 
