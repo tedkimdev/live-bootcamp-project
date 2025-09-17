@@ -94,7 +94,7 @@ impl TwoFACode {
 impl Default for TwoFACode {
     fn default() -> Self {
         // Generate a random number between 100000 and 999999
-        Self(rand::rng().random_range(100_000..=999_999).to_string())
+        Self(rand::thread_rng().gen_range(100_000..=999_999).to_string())
     }
 }
 

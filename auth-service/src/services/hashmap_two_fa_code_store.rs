@@ -50,7 +50,7 @@ mod tests {
         let code = TwoFACode::parse("123456".to_string()).unwrap();
         
         let result = two_fa_code_store
-            .add_code(email, login_attempt_id, code)
+            .add_code(email.clone(), login_attempt_id.clone(), code.clone())
             .await;
 
         assert!(result.is_ok());
