@@ -1,11 +1,14 @@
-use auth_service::{domain::{Email, LoginAttemptId, TwoFACode}, utils::JWT_COOKIE_NAME};
+use auth_service::{
+    domain::{Email, LoginAttemptId, TwoFACode},
+    utils::JWT_COOKIE_NAME,
+};
+use test_helpers::api_test;
 use uuid::Uuid;
 
-use crate::helpers::{get_random_email, TestApp};
+use crate::helpers::{TestApp, get_random_email};
 
-#[tokio::test]
+#[api_test]
 async fn should_return_422_if_malformed_input() {
-    let app = TestApp::new().await;
     let random_email = get_random_email();
 
     let body = serde_json::json!({
@@ -18,9 +21,8 @@ async fn should_return_422_if_malformed_input() {
     assert_eq!(response.status().as_u16(), 422);
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
     let random_email = get_random_email();
 
     let body = serde_json::json!({
@@ -34,9 +36,8 @@ async fn should_return_400_if_invalid_input() {
     assert_eq!(response.status().as_u16(), 400);
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_401_if_incorrect_credentials() {
-    let app = TestApp::new().await;
     let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
@@ -72,9 +73,8 @@ async fn should_return_401_if_incorrect_credentials() {
     assert_eq!(response.status().as_u16(), 401);
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_401_if_old_code() {
-    let app = TestApp::new().await;
     let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
@@ -89,7 +89,7 @@ async fn should_return_401_if_old_code() {
     let login_attempt_id = LoginAttemptId::parse(Uuid::new_v4().to_string()).unwrap();
     let old_code = TwoFACode::parse("000000".to_string()).unwrap();
     let new_code = TwoFACode::parse("123456".to_string()).unwrap();
-    
+
     let mut two_fa_code_store = app.two_fa_code_store.write().await;
     if two_fa_code_store
         .add_code(email.clone(), login_attempt_id.clone(), old_code)
@@ -119,9 +119,8 @@ async fn should_return_401_if_old_code() {
     assert_eq!(response.status().as_u16(), 401);
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_200_if_correct_code() {
-    let app = TestApp::new().await;
     let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
@@ -135,7 +134,7 @@ async fn should_return_200_if_correct_code() {
     let email = Email::parse(random_email.to_string()).unwrap();
     let login_attempt_id = LoginAttemptId::parse(Uuid::new_v4().to_string()).unwrap();
     let code = TwoFACode::parse("000000".to_string()).unwrap();
-    
+
     let mut two_fa_code_store = app.two_fa_code_store.write().await;
     if two_fa_code_store
         .add_code(email, login_attempt_id.clone(), code)
@@ -162,9 +161,8 @@ async fn should_return_200_if_correct_code() {
     assert!(!auth_cookie.value().is_empty());
 }
 
-#[tokio::test]
-async fn should_return_401_if_same_code_twice() {    
-    let app = TestApp::new().await;
+#[api_test]
+async fn should_return_401_if_same_code_twice() {
     let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
@@ -178,7 +176,7 @@ async fn should_return_401_if_same_code_twice() {
     let email = Email::parse(random_email.to_string()).unwrap();
     let login_attempt_id = LoginAttemptId::parse(Uuid::new_v4().to_string()).unwrap();
     let code = TwoFACode::parse("000000".to_string()).unwrap();
-    
+
     let mut two_fa_code_store = app.two_fa_code_store.write().await;
     if two_fa_code_store
         .add_code(email, login_attempt_id.clone(), code)

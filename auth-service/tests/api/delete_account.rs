@@ -4,14 +4,13 @@ use auth_service::{
     domain::{Email, MockUserStore, Password, User, UserStoreError},
     ErrorResponse,
 };
+use test_helpers::api_test;
 use tokio::sync::RwLock;
 
 use crate::helpers::{get_random_email, TestApp};
 
-#[tokio::test]
+#[api_test]
 async fn should_return_422_if_malformed_input() {
-    let app = TestApp::new().await;
-
     let random_email = get_random_email();
 
     let test_cases = [
@@ -34,9 +33,8 @@ async fn should_return_422_if_malformed_input() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
     let input = [
         serde_json::json!({
             "email": "invalid_email",
@@ -64,9 +62,8 @@ async fn should_return_400_if_invalid_input() {
 }
 
 
-#[tokio::test]
+#[api_test]
 async fn should_return_400_if_user_not_found() {
-    let app = TestApp::new().await;
     let input = [
         serde_json::json!({
             "email": "dev.ted.kim@gmail.com",
@@ -89,9 +86,8 @@ async fn should_return_400_if_user_not_found() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_204_if_success() {
-    let app = TestApp::new().await;
     let random_email = get_random_email();
     let body = serde_json::json!({
         "email": random_email,

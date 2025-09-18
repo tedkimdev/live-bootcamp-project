@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auth_service::{
     app_state, get_postgres_pool,
-    services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient, PostgresUserStore},
+    services::{HashmapTwoFACodeStore, HashsetBannedTokenStore, MockEmailClient, PostgresUserStore},
     utils::{prod, DATABASE_URL},
     Application,
 };

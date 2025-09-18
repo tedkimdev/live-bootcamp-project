@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 use auth_service::{
     app_state::{
@@ -6,7 +6,7 @@ use auth_service::{
     }, get_postgres_pool, services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient, PostgresUserStore}, utils::{test, DATABASE_URL}, Application
 };
 use reqwest::cookie::Jar;
-use sqlx::{postgres::PgPoolOptions, Executor, PgPool};
+use sqlx::{postgres::{PgConnectOptions, PgPoolOptions}, Connection, Executor, PgConnection, PgPool};
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
@@ -17,11 +17,13 @@ pub struct TestApp {
     pub two_fa_code_store: TwoFACodeStoreType,
     pub email_client: EmailClientType,
     pub http_client: reqwest::Client,
+    pub db_name: Option<String>,
 }
 
 impl TestApp {
     pub async fn new() -> Self {
-        let pg_pool = configure_postgresql().await;
+        let db_name = Uuid::new_v4().to_string();
+        let pg_pool = configure_postgresql(db_name.clone()).await;
 
         let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
         // let user_store = Arc::new(RwLock::new(HashmapUserStore::default()));
@@ -60,6 +62,7 @@ impl TestApp {
             two_fa_code_store,
             email_client,
             http_client,
+            db_name: Some(db_name),
         }
     }
 
@@ -98,6 +101,7 @@ impl TestApp {
             two_fa_code_store,
             email_client,
             http_client,
+            db_name: None,
         }
     }
 
@@ -176,16 +180,20 @@ impl TestApp {
             .await
             .expect("Failed to execute request.")
     }
+
+    pub async fn clean_up(&self) {
+        if self.db_name.is_some() {
+            delete_database(self.db_name.as_ref().unwrap().as_ref()).await;
+        }
+    }
 }
 
 pub fn get_random_email() -> String {
     format!("{}@example.com", Uuid::new_v4())
 }
 
-async fn configure_postgresql() -> PgPool {
+async fn configure_postgresql(db_name: String) -> PgPool {
     let postgresql_conn_url = DATABASE_URL.to_owned();
-
-    let db_name = Uuid::new_v4().to_string();
 
     configure_database(&postgresql_conn_url, &db_name).await;
 
@@ -218,4 +226,38 @@ async fn configure_database(db_conn_string: &str, db_name: &str) {
         .run(&connection)
         .await
         .expect("Failed to migrate the database")
+}
+
+async fn delete_database(db_name: &str) {
+    let postgresql_conn_url = DATABASE_URL.to_owned();
+
+    let connection_options = PgConnectOptions::from_str(&postgresql_conn_url)
+        .expect("Failed to parse PostgreSQL connection string");
+
+    let mut connection = PgConnection::connect_with(&connection_options)
+        .await
+        .expect("Failed to connect to Postgres");
+
+    // kill any active connections to the database
+    connection
+        .execute(
+            format!(
+                r#"
+                SELECT pg_terminate_backend(pg_stat_activity.pid)
+                FROM pg_stat_activity
+                WHERE pg_stat_activity.datname = '{}'
+                  AND pid <> pg_backend_pid();
+                "#,
+                db_name,
+            )
+            .as_str(),
+        )
+        .await
+        .expect("Failed to drop the database.");
+
+    // drop the database
+    connection
+        .execute(format!(r#"DROP DATABASE "{}";"#, db_name).as_str())
+        .await
+        .expect("Failed to drop the database.");
 }

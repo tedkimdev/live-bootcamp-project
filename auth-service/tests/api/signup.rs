@@ -1,18 +1,17 @@
 use std::sync::Arc;
 
 use auth_service::{
+    ErrorResponse,
     domain::{Email, MockUserStore, Password, User, UserStoreError},
     routes::SignupResponse,
-    ErrorResponse,
 };
+use test_helpers::api_test;
 use tokio::sync::RwLock;
 
-use crate::helpers::{get_random_email, TestApp};
+use crate::helpers::{TestApp, get_random_email};
 
-#[tokio::test]
+#[api_test]
 async fn should_return_422_if_malformed_input() {
-    let app = TestApp::new().await;
-
     let random_email = get_random_email();
 
     let test_cases = [
@@ -50,10 +49,8 @@ async fn should_return_422_if_malformed_input() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_201_if_valid_input() {
-    let app = TestApp::new().await;
-
     let random_email = get_random_email();
 
     let body = serde_json::json!({
@@ -83,10 +80,8 @@ async fn should_return_201_if_valid_input() {
     );
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
-    
     let random_email = get_random_email();
 
     let input = [
@@ -132,9 +127,8 @@ async fn should_return_400_if_invalid_input() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_409_if_email_already_exists() {
-    let app = TestApp::new().await;
     let random_email = get_random_email();
     let body = serde_json::json!({
         "email": random_email,
@@ -144,7 +138,7 @@ async fn should_return_409_if_email_already_exists() {
 
     let response = app.post_signup(&body).await;
     assert_eq!(response.status().as_u16(), 201);
-    
+
     let response = app.post_signup(&body).await;
     assert_eq!(response.status().as_u16(), 409);
     assert_eq!(
@@ -157,7 +151,7 @@ async fn should_return_409_if_email_already_exists() {
     );
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_500_when_db_layer_get_user_returns_unexpectd_error() {
     let mut mock_user_store = MockUserStore::new();
     let random_email = get_random_email();
@@ -190,7 +184,7 @@ async fn should_return_500_when_db_layer_get_user_returns_unexpectd_error() {
     );
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_500_when_db_layer_add_user_returns_unexpectd_error() {
     let mut mock_user_store = MockUserStore::new();
     let random_email = get_random_email();
@@ -203,10 +197,16 @@ async fn should_return_500_when_db_layer_add_user_returns_unexpectd_error() {
         .once()
         .returning(|_email| Box::pin(async { Err(UserStoreError::UnexpectedError) }));
 
-    let user = User::new(expected_email.clone(), Password::parse(password.to_string()).unwrap(), true);
+    let user = User::new(
+        expected_email.clone(),
+        Password::parse(password.to_string()).unwrap(),
+        true,
+    );
     mock_user_store
         .expect_add_user()
-        .withf(move |u| u.email == user.email && u.password == u.password && u.require_2fa == user.require_2fa)
+        .withf(move |u| {
+            u.email == user.email && u.password == u.password && u.require_2fa == user.require_2fa
+        })
         .once()
         .returning(|_u| Box::pin(async { Err(UserStoreError::UnexpectedError) }));
 
