@@ -116,6 +116,6 @@ jobs:
           export ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
           export AUTH_SERVICE_IP=${{ vars.DROPLET_IP }}
           export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          docker-compose down
-          docker-compose pull
-          docker-compose up -d
+          docker compose down
+          docker compose pull
+          docker compose up -d
